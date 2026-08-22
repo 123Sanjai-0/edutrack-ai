@@ -1,0 +1,72 @@
+from app.models.user import User, UserRole
+from app.models.academic import (
+    Department,
+    Course,
+    Semester,
+    Subject,
+    ClassSection,
+    Student,
+    Faculty,
+    Enrollment,
+    FacultySubjectAssignment,
+    AcademicStatus
+)
+from app.models.assessment import (
+    Exam,
+    ExamResult,
+    Assignment,
+    AssignmentSubmission,
+    AttendanceRecord,
+    ExamType,
+    AttendanceStatus,
+    SubmissionStatus
+)
+from app.models.analytics import (
+    AcademicConfig,
+    RiskAssessment,
+    Prediction,
+    Recommendation,
+    AcademicGoal,
+    Notification,
+    AuditLog,
+    RiskLevel,
+    RecommendationPriority,
+    RecommendationStatus,
+    GoalStatus,
+    NotificationType
+)
+
+__all__ = [
+    "User",
+    "UserRole",
+    "Department",
+    "Course",
+    "Semester",
+    "Subject",
+    "ClassSection",
+    "Student",
+    "Faculty",
+    "Enrollment",
+    "FacultySubjectAssignment",
+    "AcademicStatus",
+    "Exam",
+    "ExamResult",
+    "Assignment",
+    "AssignmentSubmission",
+    "AttendanceRecord",
+    "ExamType",
+    "AttendanceStatus",
+    "SubmissionStatus",
+    "AcademicConfig",
+    "RiskAssessment",
+    "Prediction",
+    "Recommendation",
+    "AcademicGoal",
+    "Notification",
+    "AuditLog",
+    "RiskLevel",
+    "RecommendationPriority",
+    "RecommendationStatus",
+    "GoalStatus",
+    "NotificationType",
+]

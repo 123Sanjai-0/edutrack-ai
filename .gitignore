@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+backend_venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+
+# Database (will be re-seeded on deploy)
+*.db
+
+# ML models (will be re-trained on deploy)
+# NOTE: We include ml_models/ in the repo since training requires data
+
+# Environment
+.env
+.env.local
+.env.production.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test
+.pytest_cache/
+.coverage
+htmlcov/
