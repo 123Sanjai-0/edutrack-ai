@@ -73,9 +73,10 @@ async function apiRequest<T = any>(
       // In production, trigger refresh token workflow
     }
 
-    const text = await res.text();
+    const contentType = res.headers.get("content-type") || "";
 
     if (!res.ok) {
+      const text = await res.text().catch(() => "");
       let errorData: any = {};
       try {
         errorData = text ? JSON.parse(text) : {};
@@ -89,8 +90,8 @@ async function apiRequest<T = any>(
       );
     }
 
-    const contentType = res.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
+    if (contentType.includes("application/json")) {
+      const text = await res.text().catch(() => "");
       if (!text || text.trim() === "" || text.trim() === "undefined") {
         return {} as T;
       }
@@ -100,7 +101,9 @@ async function apiRequest<T = any>(
         return {} as T;
       }
     }
-    return (await res.blob()) as unknown as T;
+
+    const blob = await res.blob().catch(() => new Blob([]));
+    return blob as unknown as T;
   } catch (error: any) {
     if (error instanceof ApiError) throw error;
     throw new ApiError(500, error.message || "Network request failed");
