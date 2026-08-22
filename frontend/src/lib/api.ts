@@ -73,12 +73,14 @@ async function apiRequest<T = any>(
       // In production, trigger refresh token workflow
     }
 
+    const text = await res.text();
+
     if (!res.ok) {
-      let errorData;
+      let errorData: any = {};
       try {
-        errorData = await res.json();
+        errorData = text ? JSON.parse(text) : {};
       } catch {
-        errorData = { detail: await res.text() };
+        errorData = { detail: text || `API request failed with status ${res.status}` };
       }
       throw new ApiError(
         res.status,
@@ -89,7 +91,6 @@ async function apiRequest<T = any>(
 
     const contentType = res.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
-      const text = await res.text();
       if (!text || text.trim() === "" || text.trim() === "undefined") {
         return {} as T;
       }
