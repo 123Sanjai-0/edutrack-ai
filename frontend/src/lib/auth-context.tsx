@@ -31,24 +31,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const initAuth = async () => {
+      if (typeof window === "undefined") return;
+
+      // Purge invalid/corrupted localStorage values
+      ["edutrack_token", "edutrack_refresh_token", "edutrack_user"].forEach((key) => {
+        const val = localStorage.getItem(key);
+        if (val === "undefined" || val === "null" || val === "" || val === "[object Object]") {
+          localStorage.removeItem(key);
+        }
+      });
+
       const token = getStoredToken();
       if (!token) {
         setIsLoading(false);
         return;
       }
+
       try {
         const storedUser = localStorage.getItem("edutrack_user");
         if (storedUser && storedUser !== "undefined" && storedUser !== "null") {
           try {
-            setUser(JSON.parse(storedUser));
+            const parsed = JSON.parse(storedUser);
+            if (parsed && typeof parsed === "object" && parsed.id) {
+              setUser(parsed);
+            }
           } catch {
             localStorage.removeItem("edutrack_user");
           }
         }
         const freshUser = await api.auth.me();
-        if (freshUser && typeof freshUser === "object") {
+        if (freshUser && typeof freshUser === "object" && freshUser.id) {
           setUser(freshUser);
           localStorage.setItem("edutrack_user", JSON.stringify(freshUser));
+        } else {
+          setAuthToken(null);
+          setUser(null);
         }
       } catch (err) {
         console.error("Auth validation failed:", err);

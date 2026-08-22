@@ -13,21 +13,32 @@ export class ApiError extends Error {
 let authToken: string | null = null;
 
 export const setAuthToken = (token: string | null) => {
-  authToken = token;
-  if (typeof window !== "undefined") {
-    if (token) {
-      localStorage.setItem("edutrack_token", token);
-    } else {
+  if (!token || token === "undefined" || token === "null" || token.trim() === "") {
+    authToken = null;
+    if (typeof window !== "undefined") {
       localStorage.removeItem("edutrack_token");
       localStorage.removeItem("edutrack_refresh_token");
+      localStorage.removeItem("edutrack_user");
+    }
+  } else {
+    authToken = token;
+    if (typeof window !== "undefined") {
+      localStorage.setItem("edutrack_token", token);
     }
   }
 };
 
 export const getStoredToken = (): string | null => {
-  if (authToken) return authToken;
+  if (authToken && authToken !== "undefined" && authToken !== "null") return authToken;
   if (typeof window !== "undefined") {
-    return localStorage.getItem("edutrack_token");
+    const token = localStorage.getItem("edutrack_token");
+    if (!token || token === "undefined" || token === "null" || token.trim() === "") {
+      localStorage.removeItem("edutrack_token");
+      authToken = null;
+      return null;
+    }
+    authToken = token;
+    return token;
   }
   return null;
 };
