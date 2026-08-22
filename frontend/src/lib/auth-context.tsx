@@ -38,12 +38,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       try {
         const storedUser = localStorage.getItem("edutrack_user");
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+        if (storedUser && storedUser !== "undefined" && storedUser !== "null") {
+          try {
+            setUser(JSON.parse(storedUser));
+          } catch {
+            localStorage.removeItem("edutrack_user");
+          }
         }
         const freshUser = await api.auth.me();
-        setUser(freshUser);
-        localStorage.setItem("edutrack_user", JSON.stringify(freshUser));
+        if (freshUser && typeof freshUser === "object") {
+          setUser(freshUser);
+          localStorage.setItem("edutrack_user", JSON.stringify(freshUser));
+        }
       } catch (err) {
         console.error("Auth validation failed:", err);
         setAuthToken(null);

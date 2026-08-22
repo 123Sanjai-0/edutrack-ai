@@ -78,7 +78,15 @@ async function apiRequest<T = any>(
 
     const contentType = res.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
-      return (await res.json()) as T;
+      const text = await res.text();
+      if (!text || text.trim() === "" || text.trim() === "undefined") {
+        return {} as T;
+      }
+      try {
+        return JSON.parse(text) as T;
+      } catch {
+        return {} as T;
+      }
     }
     return (await res.blob()) as unknown as T;
   } catch (error: any) {

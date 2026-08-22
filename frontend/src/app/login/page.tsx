@@ -37,11 +37,15 @@ export default function LoginPage() {
       await login(identifier, password);
       // Determine where to route
       const stored = localStorage.getItem("edutrack_user");
-      if (stored) {
-        const u = JSON.parse(stored);
-        if (u.role === "ADMIN") router.push("/admin/dashboard");
-        else if (u.role === "FACULTY") router.push("/faculty/dashboard");
-        else router.push("/student/dashboard");
+      if (stored && stored !== "undefined" && stored !== "null") {
+        try {
+          const u = JSON.parse(stored);
+          if (u && u.role === "ADMIN") router.push("/admin/dashboard");
+          else if (u && u.role === "FACULTY") router.push("/faculty/dashboard");
+          else router.push("/student/dashboard");
+        } catch {
+          router.push("/student/dashboard");
+        }
       } else {
         router.push("/student/dashboard");
       }
