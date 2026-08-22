@@ -108,10 +108,13 @@ export const api = {
         method: "POST",
         body: JSON.stringify(credentials),
       });
+      if (!data || !data.access_token || !data.user) {
+        throw new ApiError(401, "Invalid response from server. Please check backend connection.");
+      }
       setAuthToken(data.access_token);
       if (typeof window !== "undefined") {
-        localStorage.setItem("edutrack_refresh_token", data.refresh_token);
-        localStorage.setItem("edutrack_user", JSON.stringify(data.user));
+        if (data.refresh_token) localStorage.setItem("edutrack_refresh_token", data.refresh_token);
+        if (data.user) localStorage.setItem("edutrack_user", JSON.stringify(data.user));
       }
       return data;
     },

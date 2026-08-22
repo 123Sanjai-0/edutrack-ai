@@ -90,12 +90,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       const res = await api.auth.login({ username_or_email: email, password: pass });
-      setUser(res.user);
-      if (role === "ADMIN") window.location.href = "/admin/dashboard";
-      else if (role === "FACULTY") window.location.href = "/faculty/dashboard";
-      else window.location.href = "/student/dashboard";
-    } catch (err) {
+      if (res && res.user) {
+        setUser(res.user);
+        if (role === "ADMIN") window.location.href = "/admin/dashboard";
+        else if (role === "FACULTY") window.location.href = "/faculty/dashboard";
+        else window.location.href = "/student/dashboard";
+      } else {
+        throw new Error("Invalid response during demo login");
+      }
+    } catch (err: any) {
       console.error("Failed demo role switch", err);
+      if (typeof window !== "undefined") {
+        alert(err.message || "Failed to log in with demo account. Please check your network connection.");
+      }
     } finally {
       setIsLoading(false);
     }
