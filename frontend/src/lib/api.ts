@@ -343,17 +343,7 @@ export const api = {
 
   // Public Lookup (no auth required)
   lookup: {
-    studentByEmail: async (email: string) => {
-      const url = `${API_BASE_URL}/lookup/student?email=${encodeURIComponent(email)}`;
-      const res = await fetch(url, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ detail: "Request failed" }));
-        throw new ApiError(res.status, errorData?.detail || "Lookup failed", errorData);
-      }
-      return res.json();
-    },
+    studentByEmail: async (email: string) =>
+      apiRequest<any>(`/lookup/student?email=${encodeURIComponent(email)}`),
   },
 };
