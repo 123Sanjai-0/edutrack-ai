@@ -29,6 +29,8 @@ import {
   ArrowLeft,
   Zap,
   Activity,
+  Plus,
+  X,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -154,6 +156,53 @@ export default function LookupPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [goalForm, setGoalForm] = useState({
+    title: "",
+    subject_name: "",
+    current_score: 75,
+    target_score: 88,
+    deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+  });
+
+  const handleAddGoal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!goalForm.title.trim()) return;
+
+    const curr = Number(goalForm.current_score) || 75;
+    const tgt = Number(goalForm.target_score) || 88;
+    const progress = Math.min(100, Math.round((curr / tgt) * 100 * 10) / 10);
+
+    const newGoal = {
+      id: Date.now(),
+      title: goalForm.title.trim(),
+      subject_name: goalForm.subject_name.trim() || "Overall Target",
+      subject_code: "",
+      current_score: curr,
+      target_score: tgt,
+      deadline: goalForm.deadline ? new Date(goalForm.deadline).toISOString() : new Date().toISOString(),
+      progress_percentage: progress,
+      status: curr >= tgt ? "ACHIEVED" : "ACTIVE",
+    };
+
+    setData((prev: any) => ({
+      ...prev,
+      academic_goals: [newGoal, ...(prev?.academic_goals || [])],
+    }));
+
+    // Optional background API sync
+    api.goals.create(newGoal).catch(() => {});
+
+    setShowGoalModal(false);
+    setGoalForm({
+      title: "",
+      subject_name: "",
+      current_score: 75,
+      target_score: 88,
+      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    });
   };
 
   const handleReset = () => {
@@ -510,12 +559,28 @@ export default function LookupPage() {
             </div>
 
             {/* ── Academic Target Goals & Milestones ── */}
-            {data.academic_goals && data.academic_goals.length > 0 && (
-              <div className="bg-slate-900/80 border border-slate-800/60 rounded-2xl p-6 backdrop-blur-xl">
-                <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+            <div className="bg-slate-900/80 border border-slate-800/60 rounded-2xl p-6 backdrop-blur-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <Target className="w-4 h-4 text-indigo-400" />
                   Academic Target Goals & Milestones
                 </h3>
+                <button
+                  onClick={() => setShowGoalModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600/90 hover:bg-indigo-500 text-white text-[11px] font-bold shadow-md shadow-indigo-600/20 transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Set Target Goal
+                </button>
+              </div>
+
+              {(!data.academic_goals || data.academic_goals.length === 0) ? (
+                <div className="p-6 text-center rounded-xl bg-slate-800/30 border border-slate-800/80">
+                  <Target className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                  <p className="text-xs text-slate-400 font-medium">No target goals set yet.</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Click "Set Target Goal" above to create target milestones for this student.</p>
+                </div>
+              ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {data.academic_goals.map((g: any) => (
                     <div
@@ -566,6 +631,114 @@ export default function LookupPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+
+            {/* Modal for setting new goal */}
+            {showGoalModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in">
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Target className="w-4 h-4 text-indigo-400" />
+                      Set Academic Target Goal
+                    </h3>
+                    <button onClick={() => setShowGoalModal(false)} className="text-slate-400 hover:text-white transition-colors">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleAddGoal} className="space-y-3.5 text-xs">
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1">
+                        Goal Title
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Score 90+ in Final Exam"
+                        value={goalForm.title}
+                        onChange={(e) => setGoalForm({ ...goalForm, title: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1">
+                        Subject / Focus Area
+                      </label>
+                      <select
+                        value={goalForm.subject_name}
+                        onChange={(e) => setGoalForm({ ...goalForm, subject_name: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-indigo-500"
+                      >
+                        <option value="Overall Target">Overall Academic Target</option>
+                        {data.subject_performances?.map((sp: any) => (
+                          <option key={sp.subject_id} value={`${sp.subject_code} · ${sp.subject_name}`}>
+                            {sp.subject_code} — {sp.subject_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-semibold text-slate-300 mb-1">
+                          Current Score (%)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={goalForm.current_score}
+                          onChange={(e) => setGoalForm({ ...goalForm, current_score: Number(e.target.value) })}
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-300 mb-1">
+                          Target Score (%)
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={goalForm.target_score}
+                          onChange={(e) => setGoalForm({ ...goalForm, target_score: Number(e.target.value) })}
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1">
+                        Target Deadline
+                      </label>
+                      <input
+                        type="date"
+                        value={goalForm.deadline}
+                        onChange={(e) => setGoalForm({ ...goalForm, deadline: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500 font-mono"
+                      />
+                    </div>
+
+                    <div className="pt-2 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowGoalModal(false)}
+                        className="flex-1 py-2.5 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all shadow-md shadow-indigo-600/30"
+                      >
+                        Add Goal
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             )}
