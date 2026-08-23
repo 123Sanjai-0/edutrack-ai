@@ -509,6 +509,67 @@ export default function LookupPage() {
               </div>
             </div>
 
+            {/* ── Academic Target Goals & Milestones ── */}
+            {data.academic_goals && data.academic_goals.length > 0 && (
+              <div className="bg-slate-900/80 border border-slate-800/60 rounded-2xl p-6 backdrop-blur-xl">
+                <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                  <Target className="w-4 h-4 text-indigo-400" />
+                  Academic Target Goals & Milestones
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {data.academic_goals.map((g: any) => (
+                    <div
+                      key={g.id}
+                      className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 flex flex-col justify-between space-y-3"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
+                              {g.subject_code ? `${g.subject_code} · ${g.subject_name}` : g.subject_name || "Target Goal"}
+                            </span>
+                            <h4 className="text-xs font-bold text-white mt-0.5">
+                              {g.title}
+                            </h4>
+                          </div>
+                          <span className="font-mono text-[11px] font-bold text-slate-200 px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-700/60 flex-shrink-0">
+                            {g.current_score}% → {g.target_score}%
+                          </span>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="mt-3 space-y-1">
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span className="text-slate-400 font-medium">Target Progress</span>
+                            <span className="font-bold text-indigo-400">{g.progress_percentage}%</span>
+                          </div>
+                          <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-indigo-500 to-sky-400 rounded-full transition-all duration-500"
+                              style={{ width: `${Math.min(100, g.progress_percentage)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-700/40 flex items-center justify-between text-[10px] text-slate-400">
+                        <span>Deadline: {g.deadline ? new Date(g.deadline).toLocaleDateString() : "End of Term"}</span>
+                        <span
+                          className={`font-bold px-2 py-0.5 rounded-full text-[9px] ${
+                            g.status === "ACHIEVED"
+                              ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                              : "bg-indigo-500/15 text-indigo-400 border border-indigo-500/30"
+                          }`}
+                        >
+                          {g.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* ── Weak Subjects Warning ── */}
             {data.weak_subjects?.length > 0 && (
               <div className="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-5">

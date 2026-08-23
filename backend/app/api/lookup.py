@@ -93,8 +93,24 @@ def lookup_student_by_email(
     }
     ml_result = predict_student_performance(ml_features)
 
-    # 5. Recommendations
+    # 5. Recommendations & Goals
     generate_student_recommendations(db, student.id)
+    from app.models.analytics import AcademicGoal
+    goals_records = db.query(AcademicGoal).filter(AcademicGoal.student_id == student.id).all()
+    academic_goals = [
+        {
+            "id": g.id,
+            "title": g.title,
+            "subject_name": g.subject.name if g.subject else "Overall Target",
+            "subject_code": g.subject.code if g.subject else None,
+            "target_score": g.target_score,
+            "current_score": g.current_score,
+            "deadline": g.deadline.isoformat() if g.deadline else None,
+            "progress_percentage": g.progress_percentage,
+            "status": g.status.value if g.status else "ACTIVE",
+        }
+        for g in goals_records
+    ]
 
     # 6. Performance trends
     performance_trends = [
@@ -147,4 +163,5 @@ def lookup_student_by_email(
         "performance_trends": performance_trends,
         "weak_subjects": weak_subjects,
         "radar_data": radar_data,
+        "academic_goals": academic_goals,
     }

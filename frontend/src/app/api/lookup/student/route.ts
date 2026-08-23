@@ -122,6 +122,30 @@ const MOCK_STUDENTS: Record<string, any> = {
       { subject: "CS404", student_score: 83.2, class_average: 72.0 },
       { subject: "MA401", student_score: 87.5, class_average: 70.0 },
     ],
+    academic_goals: [
+      {
+        id: 1,
+        title: "Score 85+ in DBMS Final Exam",
+        subject_name: "Database Management Systems",
+        subject_code: "CS401",
+        target_score: 85.0,
+        current_score: 78.0,
+        deadline: "2026-05-20T00:00:00",
+        progress_percentage: 91.7,
+        status: "ACTIVE",
+      },
+      {
+        id: 2,
+        title: "Master Dynamic Programming Graph Modules",
+        subject_name: "Design & Analysis of Algorithms",
+        subject_code: "CS402",
+        target_score: 90.0,
+        current_score: 84.0,
+        deadline: "2026-04-30T00:00:00",
+        progress_percentage: 93.3,
+        status: "ACTIVE",
+      },
+    ],
   },
   "aarav.williams4@edutrack.ai": {
     student: {
@@ -284,6 +308,18 @@ export async function GET(request: NextRequest) {
       radar_data: [
         { subject: "CS401", student_score: 80.5, class_average: 72.0 },
         { subject: "CS402", student_score: 77.5, class_average: 70.0 },
+      ],
+      academic_goals: [
+        {
+          id: 101,
+          title: "Achieve 85%+ in Semester Examinations",
+          subject_name: "Overall Target",
+          target_score: 85.0,
+          current_score: 79.0,
+          deadline: "2026-05-30T00:00:00",
+          progress_percentage: 92.9,
+          status: "ACTIVE",
+        },
       ],
     });
   }
