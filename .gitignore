@@ -16,7 +16,8 @@ build/
 *.db
 
 # ML models (will be re-trained on deploy)
-# NOTE: We include ml_models/ in the repo since training requires data
+# NOTE: We include backend/ml_models/ in the repo since training requires data
+/ml_models/
 
 # Environment
 .env

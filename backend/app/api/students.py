@@ -423,3 +423,132 @@ def export_students_csv(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=edutrack_students.csv"}
     )
+
+@router.get("/template/csv")
+def download_student_import_template(
+    current_user: User = Depends(require_admin)
+):
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["student_id", "full_name", "email", "department_code", "course_code", "semester_number", "class_section", "admission_year", "cgpa"])
+    writer.writerow(["STU2026999", "Alex Morgan", "alex.morgan@edutrack.ai", "CSE", "BTECH-CSE", "4", "CSE-4A", "2024", "8.2"])
+    writer.writerow(["STU2026998", "Taylor Swift", "taylor.swift@edutrack.ai", "AIDS", "BTECH-AIDS", "4", "AIDS-4A", "2024", "7.9"])
+    output.seek(0)
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=student_import_template.csv"}
+    )
+
+@router.post("/bulk-csv")
+async def bulk_import_students_csv(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    content = await file.read()
+    decoded = content.decode("utf-8")
+    reader = csv.DictReader(io.StringIO(decoded))
+
+    created_count = 0
+    errors = []
+
+    # Cache lookup dictionaries
+    dept_map = {d.code.upper(): d.id for d in db.query(Department).all()}
+    course_map = {c.code.upper(): c.id for c in db.query(Course).all()}
+    sem_map = {s.number: s.id for s in db.query(Semester).all()}
+    section_map = {sec.name.upper(): sec.id for sec in db.query(ClassSection).all()}
+
+    default_dept_id = list(dept_map.values())[0] if dept_map else 1
+    default_course_id = list(course_map.values())[0] if course_map else 1
+    default_sem_id = list(sem_map.values())[0] if sem_map else 1
+    default_section_id = list(section_map.values())[0] if section_map else 1
+
+    for row_idx, row in enumerate(reader, start=2):
+        s_id = (row.get("student_id") or row.get("StudentID") or "").strip()
+        full_name = (row.get("full_name") or row.get("name") or row.get("StudentName") or "").strip()
+        email = (row.get("email") or row.get("Email") or "").strip().lower()
+
+        if not s_id or not full_name or not email:
+            continue
+
+        existing_user = db.query(User).filter((User.email == email) | (User.username == s_id.lower())).first()
+        existing_student = db.query(Student).filter(Student.student_id == s_id).first()
+        if existing_student or existing_user:
+            continue
+
+        dept_code = (row.get("department_code") or "CSE").strip().upper()
+        dept_id = dept_map.get(dept_code, default_dept_id)
+
+        course_code = (row.get("course_code") or "").strip().upper()
+        course_id = course_map.get(course_code, default_course_id)
+
+        try:
+            sem_num = int(row.get("semester_number") or 4)
+        except ValueError:
+            sem_num = 4
+        sem_id = sem_map.get(sem_num, default_sem_id)
+
+        sec_name = (row.get("class_section") or "").strip().upper()
+        section_id = section_map.get(sec_name, default_section_id)
+
+        try:
+            adm_yr = int(row.get("admission_year") or 2024)
+        except ValueError:
+            adm_yr = 2024
+
+        try:
+            cgpa_val = float(row.get("cgpa") or 7.5)
+        except ValueError:
+            cgpa_val = 7.5
+
+        new_user = User(
+            email=email,
+            username=s_id.lower(),
+            full_name=full_name,
+            hashed_password=get_password_hash("Student@123"),
+            role=UserRole.STUDENT,
+            avatar_url=f"https://ui-avatars.com/api/?name={full_name.replace(' ', '+')}&background=6366f1&color=fff",
+            is_active=True
+        )
+        db.add(new_user)
+        db.flush()
+
+        new_student = Student(
+            student_id=s_id,
+            user_id=new_user.id,
+            department_id=dept_id,
+            course_id=course_id,
+            semester_id=sem_id,
+            class_section_id=section_id,
+            admission_year=adm_yr,
+            academic_status=AcademicStatus.ACTIVE,
+            cgpa=cgpa_val,
+            total_credits_earned=24
+        )
+        db.add(new_student)
+        db.flush()
+
+        # Enroll in subjects
+        subjects = db.query(Subject).filter(Subject.department_id == dept_id, Subject.semester_id == sem_id).all()
+        for sub in subjects:
+            enr = Enrollment(student_id=new_student.id, subject_id=sub.id, semester_id=sem_id, is_completed=False)
+            db.add(enr)
+
+        evaluate_student_risk(db, new_student.id)
+        generate_student_recommendations(db, new_student.id)
+        created_count += 1
+
+    db.commit()
+
+    log_audit_event(
+        db=db,
+        action="STUDENTS_IMPORTED_CSV",
+        entity_type="Student",
+        entity_id=f"Batch-{created_count}",
+        user=current_user,
+        details={"created_count": created_count, "filename": file.filename}
+    )
+
+    return {"message": f"Successfully imported and enrolled {created_count} students from CSV", "created_count": created_count}
+

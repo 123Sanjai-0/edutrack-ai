@@ -15,6 +15,10 @@ def _parse_cors_origins() -> List[str]:
         "*"
     ]
 
+# Default to absolute path of edutrack.db in backend folder
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DEFAULT_DB_FILE = os.path.join(BASE_DIR, "edutrack.db")
+
 class Settings(BaseSettings):
     PROJECT_NAME: str = "EduTrack AI"
     VERSION: str = "1.0.0"
@@ -27,7 +31,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_MINUTES", "10080"))  # 7 days
     
     # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./edutrack.db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_DB_FILE}")
     
     # CORS
     CORS_ORIGINS: List[str] = _parse_cors_origins()

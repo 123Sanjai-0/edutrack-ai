@@ -92,6 +92,7 @@ class RecommendationResponse(BaseModel):
 
 # Academic Goal Schemas
 class GoalCreate(BaseModel):
+    student_id: Optional[int] = None
     subject_id: Optional[int] = None
     title: str
     target_score: float
@@ -119,6 +120,15 @@ class GoalResponse(BaseModel):
         from_attributes = True
 
 # Notification Schemas
+class NotificationCreate(BaseModel):
+    user_id: Optional[int] = None
+    student_id: Optional[int] = None
+    title: str
+    message: str
+    notification_type: NotificationType = NotificationType.ALERT
+    link: Optional[str] = None
+
+
 class NotificationResponse(BaseModel):
     id: int
     user_id: int
@@ -130,6 +140,7 @@ class NotificationResponse(BaseModel):
     created_at: datetime
     class Config:
         from_attributes = True
+
 
 # Audit Log Schemas
 class AuditLogResponse(BaseModel):

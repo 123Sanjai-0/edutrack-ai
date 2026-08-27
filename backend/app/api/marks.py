@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Response
 from sqlalchemy.orm import Session
 import csv
 import io
@@ -10,7 +10,7 @@ from app.models.user import User
 from app.models.academic import Student
 from app.models.assessment import Exam, ExamResult, ExamType
 from app.schemas.assessment import (
-    ExamCreate, ExamResponse,
+    ExamCreate, ExamUpdate, ExamResponse,
     ExamResultResponse, BulkMarksEntry, SingleMarkEntry
 )
 from app.services.audit_service import log_audit_event
@@ -86,6 +86,105 @@ def create_exam(
         "class_section_name": exam.class_section.name if exam.class_section else None,
         "created_at": exam.created_at
     }
+
+@router.put("/exams/{id}", response_model=ExamResponse)
+def update_exam(
+    id: int,
+    exam_in: ExamUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_faculty_or_admin)
+):
+    exam = db.query(Exam).filter(Exam.id == id).first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+
+    update_data = exam_in.model_dump(exclude_unset=True)
+    for k, v in update_data.items():
+        setattr(exam, k, v)
+
+    db.commit()
+    db.refresh(exam)
+
+    log_audit_event(
+        db=db,
+        action="EXAM_UPDATED",
+        entity_type="Exam",
+        entity_id=str(id),
+        user=current_user,
+        details={"title": exam.title}
+    )
+
+    return {
+        "id": exam.id,
+        "title": exam.title,
+        "exam_type": exam.exam_type,
+        "subject_id": exam.subject_id,
+        "class_section_id": exam.class_section_id,
+        "max_marks": exam.max_marks,
+        "weight_percentage": exam.weight_percentage,
+        "exam_date": exam.exam_date,
+        "is_published": exam.is_published,
+        "subject_name": exam.subject.name if exam.subject else None,
+        "subject_code": exam.subject.code if exam.subject else None,
+        "class_section_name": exam.class_section.name if exam.class_section else None,
+        "created_at": exam.created_at
+    }
+
+@router.delete("/exams/{id}")
+def delete_exam(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_faculty_or_admin)
+):
+    exam = db.query(Exam).filter(Exam.id == id).first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+
+    # Delete results first
+    db.query(ExamResult).filter(ExamResult.exam_id == id).delete()
+    db.delete(exam)
+    db.commit()
+
+    log_audit_event(
+        db=db,
+        action="EXAM_DELETED",
+        entity_type="Exam",
+        entity_id=str(id),
+        user=current_user
+    )
+
+    return {"message": f"Exam ID {id} and associated marks deleted successfully"}
+
+@router.get("/exams/{id}/template")
+def download_exam_marks_template(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_faculty_or_admin)
+):
+    exam = db.query(Exam).filter(Exam.id == id).first()
+    if not exam:
+        raise HTTPException(status_code=404, detail="Exam not found")
+
+    students = db.query(Student).filter(Student.class_section_id == exam.class_section_id).all() if exam.class_section_id else db.query(Student).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["StudentID", "StudentName", "Marks", "IsAbsent", "Remarks"])
+    for s in students:
+        res = db.query(ExamResult).filter(ExamResult.exam_id == id, ExamResult.student_id == s.id).first()
+        existing_marks = res.marks_obtained if res else ""
+        absent_flag = "TRUE" if (res and res.is_absent) else "FALSE"
+        rem = res.remarks if res and res.remarks else ""
+        writer.writerow([s.student_id, s.user.full_name if s.user else "Student", existing_marks, absent_flag, rem])
+
+    output.seek(0)
+    filename = f"Marks_Template_Exam_{exam.id}_{exam.title.replace(' ', '_')}.csv"
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
 
 @router.get("/exam/{id}/results", response_model=List[ExamResultResponse])
 def get_exam_results(

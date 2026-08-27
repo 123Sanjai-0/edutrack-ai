@@ -17,6 +17,16 @@ class FacultyCreate(FacultyBase):
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
 
+class FacultyUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    avatar_url: Optional[str] = None
+    department_id: Optional[int] = None
+    designation: Optional[str] = None
+    qualification: Optional[str] = None
+    specialization: Optional[str] = None
+
 class FacultyResponse(FacultyBase):
     id: int
     user_id: int
@@ -27,13 +37,14 @@ class FacultyResponse(FacultyBase):
     department_name: Optional[str] = None
     assigned_classes: List[str] = []
     assigned_subjects: List[str] = []
+    assignments: List[dict] = []
     created_at: datetime
 
     class Config:
         from_attributes = True
 
 class FacultySubjectAssignmentCreate(BaseModel):
-    faculty_id: int
+    faculty_id: Optional[int] = None
     subject_id: int
     class_section_id: int
     academic_year: str = "2025-2026"
@@ -46,3 +57,4 @@ class FacultySubjectAssignmentResponse(FacultySubjectAssignmentCreate):
 
     class Config:
         from_attributes = True
+

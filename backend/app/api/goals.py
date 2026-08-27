@@ -48,10 +48,16 @@ def create_goal(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if not current_user.student_profile:
-        raise HTTPException(status_code=400, detail="Only students can create academic goals")
+    if goal_in.student_id:
+        student_id = goal_in.student_id
+        student = db.query(Student).filter(Student.id == student_id).first()
+        if not student:
+            raise HTTPException(status_code=404, detail="Student not found")
+    elif current_user.student_profile:
+        student_id = current_user.student_profile.id
+    else:
+        raise HTTPException(status_code=400, detail="Student ID required when created by faculty/admin")
 
-    student_id = current_user.student_profile.id
     
     # Calculate initial progress
     progress = 0.0

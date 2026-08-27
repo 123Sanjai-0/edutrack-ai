@@ -17,6 +17,17 @@ class ExamBase(BaseModel):
 class ExamCreate(ExamBase):
     pass
 
+class ExamUpdate(BaseModel):
+    title: Optional[str] = None
+    exam_type: Optional[ExamType] = None
+    subject_id: Optional[int] = None
+    class_section_id: Optional[int] = None
+    max_marks: Optional[float] = None
+    weight_percentage: Optional[float] = None
+    exam_date: Optional[date] = None
+    is_published: Optional[bool] = None
+
+
 class ExamResponse(ExamBase):
     id: int
     subject_name: Optional[str] = None

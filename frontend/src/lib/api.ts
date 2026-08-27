@@ -164,6 +164,15 @@ export const api = {
       apiRequest<any>(`/students/${id}`, { method: "DELETE" }),
     getAnalytics: async (id: number) =>
       apiRequest<any>(`/students/${id}/analytics`),
+    uploadCsv: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return apiRequest<any>("/students/bulk-csv", {
+        method: "POST",
+        body: formData,
+      });
+    },
+    getTemplateUrl: () => `${API_BASE_URL}/students/template/csv`,
   },
 
   // Faculty
@@ -172,6 +181,28 @@ export const api = {
       const query = deptId ? `?department_id=${deptId}` : "";
       return apiRequest<any[]>(`/faculty${query}`);
     },
+    get: async (id: number) => apiRequest<any>(`/faculty/${id}`),
+    create: async (data: any) =>
+      apiRequest<any>("/faculty", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: async (id: number, data: any) =>
+      apiRequest<any>(`/faculty/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    delete: async (id: number) =>
+      apiRequest<any>(`/faculty/${id}`, { method: "DELETE" }),
+    assignSubject: async (facultyId: number, data: { subject_id: number; class_section_id: number; academic_year?: string }) =>
+      apiRequest<any>(`/faculty/${facultyId}/assignments`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    removeAssignment: async (assignmentId: number) =>
+      apiRequest<any>(`/faculty/assignments/${assignmentId}`, {
+        method: "DELETE",
+      }),
     getMyClasses: async () => apiRequest<any[]>("/faculty/me/classes"),
   },
 
@@ -211,6 +242,15 @@ export const api = {
         method: "POST",
         body: JSON.stringify(data),
       }),
+    updateExam: async (id: number, data: any) =>
+      apiRequest<any>(`/marks/exams/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    deleteExam: async (id: number) =>
+      apiRequest<any>(`/marks/exams/${id}`, {
+        method: "DELETE",
+      }),
     getExamResults: async (examId: number) =>
       apiRequest<any[]>(`/marks/exam/${examId}/results`),
     saveBulkMarks: async (data: { exam_id: number; marks: any[] }) =>
@@ -226,6 +266,7 @@ export const api = {
         body: formData,
       });
     },
+    getExamTemplateUrl: (examId: number) => `${API_BASE_URL}/marks/exams/${examId}/template`,
   },
 
   // Attendance
@@ -312,6 +353,11 @@ export const api = {
   // Notifications
   notifications: {
     getAll: async () => apiRequest<any[]>("/notifications"),
+    create: async (data: { student_id?: number; user_id?: number; title: string; message: string; notification_type?: string }) =>
+      apiRequest<any>("/notifications", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
     markRead: async (id: number) =>
       apiRequest<any>(`/notifications/${id}/read`, { method: "PUT" }),
     markAllRead: async () =>
@@ -337,7 +383,7 @@ export const api = {
   // Reports
   reports: {
     getStudentPdfUrl: (studentId: number) => `${API_BASE_URL}/reports/student/${studentId}/pdf`,
-    getStudentsCsvUrl: () => `${API_BASE_URL}/students/export/csv`,
+    getStudentsCsvUrl: (deptId?: number) => `${API_BASE_URL}/students/export/csv${deptId ? `?department_id=${deptId}` : ""}`,
     getClassCsvUrl: (classId: number) => `${API_BASE_URL}/reports/class/${classId}/csv`,
   },
 
@@ -347,3 +393,4 @@ export const api = {
       apiRequest<any>(`/lookup/student?email=${encodeURIComponent(email)}`),
   },
 };
+
